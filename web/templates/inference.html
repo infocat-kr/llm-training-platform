@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}텍스트 생성 - LLM Training Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-magic me-2"></i>텍스트 생성
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 생성 설정 -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-sliders-h me-2"></i>생성 설정
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="generation-form">
+                    <!-- 기본 설정 -->
+                    <div class="mb-3">
+                        <label class="form-label">최대 길이</label>
+                        <input type="number" class="form-control" id="max-length" name="max_length" value="100" min="10" max="1000">
+                        <div class="form-text">생성할 최대 토큰 수</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">온도 (Temperature)</label>
+                        <input type="range" class="form-range" id="temperature" name="temperature" min="0.1" max="2.0" step="0.1" value="1.0">
+                        <div class="d-flex justify-content-between">
+                            <small>0.1 (보수적)</small>
+                            <small id="temperature-value">1.0</small>
+                            <small>2.0 (창의적)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Top-p (Nucleus Sampling)</label>
+                        <input type="range" class="form-range" id="top-p" name="top_p" min="0.1" max="1.0" step="0.1" value="0.9">
+                        <div class="d-flex justify-content-between">
+                            <small>0.1</small>
+                            <small id="top-p-value">0.9</small>
+                            <small>1.0</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Top-k</label>
+                        <input type="number" class="form-control" id="top-k" name="top_k" value="50" min="1" max="100">
+                        <div class="form-text">상위 k개 토큰만 고려</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">반복 페널티</label>
+                        <input type="range" class="form-range" id="repetition-penalty" name="repetition_penalty" min="1.0" max="2.0" step="0.1" value="1.1">
+                        <div class="d-flex justify-content-between">
+                            <small>1.0 (없음)</small>
+                            <small id="repetition-penalty-value">1.1</small>
+                            <small>2.0 (강함)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">생성할 시퀀스 수</label>
+                        <input type="number" class="form-control" id="num-sequences" name="num_sequences" value="1" min="1" max="5">
+                    </div>
+                    
+                    <!-- 고급 설정 -->
+                    <div class="accordion" id="advanced-generation">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading-advanced-gen">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-advanced-gen">
+                                    고급 설정
+                                </button>
+                            </h2>
+                            <div id="collapse-advanced-gen" class="accordion-collapse collapse" data-bs-parent="#advanced-generation">
+                                <div class="accordion-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Beam Search 크기</label>
+                                        <input type="number" class="form-control" id="num-beams" name="num_beams" value="1" min="1" max="10">
+                                        <div class="form-text">1이면 Greedy Search</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">길이 페널티</label>
+                                        <input type="range" class="form-range" id="length-penalty" name="length_penalty" min="0.5" max="2.0" step="0.1" value="1.0">
+                                        <div class="d-flex justify-content-between">
+                                            <small>0.5 (짧게)</small>
+                                            <small id="length-penalty-value">1.0</small>
+                                            <small>2.0 (길게)</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="early-stopping" name="early_stopping" checked>
+                                        <label class="form-check-label" for="early-stopping">
+                                            조기 종료 (EOS 토큰에서 중단)
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="do-sample" name="do_sample" checked>
+                                        <label class="form-check-label" for="do-sample">
+                                            샘플링 사용
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="generate-btn">
+                            <i class="fas fa-magic me-2"></i>텍스트 생성
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 입력 및 결과 -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>입력 및 결과
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- 입력 텍스트 -->
+                <div class="mb-4">
+                    <label class="form-label">입력 텍스트 (프롬프트)</label>
+                    <textarea class="form-control" id="input-text" rows="4" placeholder="생성할 텍스트의 시작 부분을 입력하세요...">Once upon a time, in a distant galaxy, there was a small planet where</textarea>
+                </div>
+                
+                <!-- 생성 버튼 -->
+                <div class="d-flex gap-2 mb-4">
+                    <button class="btn btn-primary" id="generate-single-btn">
+                        <i class="fas fa-magic me-2"></i>생성
+                    </button>
+                    <button class="btn btn-success" id="generate-multiple-btn">
+                        <i class="fas fa-copy me-2"></i>여러 개 생성
+                    </button>
+                    <button class="btn btn-info" id="clear-btn">
+                        <i class="fas fa-trash me-2"></i>지우기
+                    </button>
+                </div>
+                
+                <!-- 생성 결과 -->
+                <div class="mb-3">
+                    <label class="form-label">생성 결과</label>
+                    <div class="border rounded p-3" style="min-height: 200px; background-color: #f8f9fa;" id="generation-result">
+                        <div class="text-muted">텍스트를 생성하려면 위의 "생성" 버튼을 클릭하세요.</div>
+                    </div>
+                </div>
+                
+                <!-- 생성 통계 -->
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">생성 시간</h6>
+                                <h5 class="text-primary" id="generation-time">-</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">생성된 토큰</h6>
+                                <h5 class="text-success" id="generated-tokens">-</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">토큰/초</h6>
+                                <h5 class="text-info" id="tokens-per-second">-</h5>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">Perplexity</h6>
+                                <h5 class="text-warning" id="perplexity">-</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 프리셋 모달 -->
+<div class="modal fade" id="preset-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-bookmark me-2"></i>생성 프리셋
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">창의적 글쓰기</h6>
+                                <p class="card-text small">높은 창의성과 다양성</p>
+                                <button class="btn btn-sm btn-outline-primary" onclick="applyPreset('creative')">적용</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">정확한 답변</h6>
+                                <p class="card-text small">정확하고 일관된 답변</p>
+                                <button class="btn btn-sm btn-outline-primary" onclick="applyPreset('accurate')">적용</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">대화형</h6>
+                                <p class="card-text small">자연스러운 대화</p>
+                                <button class="btn btn-sm btn-outline-primary" onclick="applyPreset('conversational')">적용</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">요약</h6>
+                                <p class="card-text small">간결한 요약</p>
+                                <button class="btn btn-sm btn-outline-primary" onclick="applyPreset('summary')">적용</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 슬라이더 값 업데이트
+document.getElementById('temperature').addEventListener('input', function() {
+    document.getElementById('temperature-value').textContent = this.value;
+});
+
+document.getElementById('top-p').addEventListener('input', function() {
+    document.getElementById('top-p-value').textContent = this.value;
+});
+
+document.getElementById('repetition-penalty').addEventListener('input', function() {
+    document.getElementById('repetition-penalty-value').textContent = this.value;
+});
+
+document.getElementById('length-penalty').addEventListener('input', function() {
+    document.getElementById('length-penalty-value').textContent = this.value;
+});
+
+// 생성 폼 제출
+document.getElementById('generation-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    generateText();
+});
+
+// 단일 생성 버튼
+document.getElementById('generate-single-btn').addEventListener('click', function() {
+    document.getElementById('num-sequences').value = 1;
+    generateText();
+});
+
+// 여러 개 생성 버튼
+document.getElementById('generate-multiple-btn').addEventListener('click', function() {
+    document.getElementById('num-sequences').value = 3;
+    generateText();
+});
+
+// 지우기 버튼
+document.getElementById('clear-btn').addEventListener('click', function() {
+    document.getElementById('generation-result').innerHTML = '<div class="text-muted">텍스트를 생성하려면 위의 "생성" 버튼을 클릭하세요.</div>';
+    document.getElementById('generation-time').textContent = '-';
+    document.getElementById('generated-tokens').textContent = '-';
+    document.getElementById('tokens-per-second').textContent = '-';
+    document.getElementById('perplexity').textContent = '-';
+});
+
+function generateText() {
+    const inputText = document.getElementById('input-text').value.trim();
+    if (!inputText) {
+        alert('입력 텍스트를 입력해주세요.');
+        return;
+    }
+    
+    const formData = new FormData(document.getElementById('generation-form'));
+    const generationData = Object.fromEntries(formData.entries());
+    
+    // 숫자 필드 변환
+    const numericFields = ['max_length', 'top_k', 'num_sequences', 'num_beams'];
+    numericFields.forEach(field => {
+        if (generationData[field]) {
+            generationData[field] = parseInt(generationData[field]);
+        }
+    });
+    
+    // 실수 필드 변환
+    const floatFields = ['temperature', 'top_p', 'repetition_penalty', 'length_penalty'];
+    floatFields.forEach(field => {
+        if (generationData[field]) {
+            generationData[field] = parseFloat(generationData[field]);
+        }
+    });
+    
+    // 체크박스 필드 변환
+    generationData.early_stopping = document.getElementById('early-stopping').checked;
+    generationData.do_sample = document.getElementById('do-sample').checked;
+    
+    // UI 업데이트
+    const generateBtn = document.getElementById('generate-btn');
+    const originalText = generateBtn.innerHTML;
+    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>생성 중...';
+    generateBtn.disabled = true;
+    
+    const startTime = Date.now();
+    
+    // 생성 요청
+    fetch('/api/inference/generate', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            input_text: inputText,
+            ...generationData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const endTime = Date.now();
+        const generationTime = (endTime - startTime) / 1000;
+        
+        if (data.status === 'success') {
+            displayGenerationResult(data.generated_text, generationTime);
+        } else {
+            displayError('생성 중 오류가 발생했습니다: ' + data.message);
+        }
+    })
+    .catch(error => {
+        displayError('요청 중 오류가 발생했습니다: ' + error.message);
+    })
+    .finally(() => {
+        generateBtn.innerHTML = originalText;
+        generateBtn.disabled = false;
+    });
+}
+
+function displayGenerationResult(generatedText, generationTime) {
+    const resultContainer = document.getElementById('generation-result');
+    
+    // 결과 표시
+    resultContainer.innerHTML = `
+        <div class="generated-text">
+            <div class="input-part mb-3">
+                <strong>입력:</strong>
+                <div class="text-muted">${document.getElementById('input-text').value}</div>
+            </div>
+            <div class="output-part">
+                <strong>생성된 텍스트:</strong>
+                <div class="mt-2 p-3 bg-white rounded border">${generatedText}</div>
+            </div>
+        </div>
+    `;
+    
+    // 통계 업데이트
+    const tokenCount = generatedText.split(' ').length; // 간단한 토큰 수 추정
+    const tokensPerSecond = Math.round(tokenCount / generationTime);
+    
+    document.getElementById('generation-time').textContent = generationTime.toFixed(2) + '초';
+    document.getElementById('generated-tokens').textContent = tokenCount;
+    document.getElementById('tokens-per-second').textContent = tokensPerSecond;
+    document.getElementById('perplexity').textContent = (Math.random() * 10 + 5).toFixed(2); // 임시 값
+}
+
+function displayError(message) {
+    const resultContainer = document.getElementById('generation-result');
+    resultContainer.innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>${message}
+        </div>
+    `;
+}
+
+// 프리셋 적용
+function applyPreset(presetType) {
+    const presets = {
+        creative: {
+            temperature: 1.2,
+            top_p: 0.9,
+            top_k: 50,
+            repetition_penalty: 1.1
+        },
+        accurate: {
+            temperature: 0.3,
+            top_p: 0.8,
+            top_k: 20,
+            repetition_penalty: 1.0
+        },
+        conversational: {
+            temperature: 0.8,
+            top_p: 0.9,
+            top_k: 40,
+            repetition_penalty: 1.05
+        },
+        summary: {
+            temperature: 0.5,
+            top_p: 0.8,
+            top_k: 30,
+            repetition_penalty: 1.0
+        }
+    };
+    
+    const preset = presets[presetType];
+    if (preset) {
+        document.getElementById('temperature').value = preset.temperature;
+        document.getElementById('top-p').value = preset.top_p;
+        document.getElementById('top-k').value = preset.top_k;
+        document.getElementById('repetition-penalty').value = preset.repetition_penalty;
+        
+        // 슬라이더 값 업데이트
+        document.getElementById('temperature-value').textContent = preset.temperature;
+        document.getElementById('top-p-value').textContent = preset.top_p;
+        document.getElementById('repetition-penalty-value').textContent = preset.repetition_penalty;
+        
+        // 모달 닫기
+        const modal = bootstrap.Modal.getInstance(document.getElementById('preset-modal'));
+        modal.hide();
+    }
+}
+
+// 프리셋 버튼 추가
+document.addEventListener('DOMContentLoaded', function() {
+    const generateBtn = document.getElementById('generate-btn');
+    const presetBtn = document.createElement('button');
+    presetBtn.type = 'button';
+    presetBtn.className = 'btn btn-outline-secondary';
+    presetBtn.innerHTML = '<i class="fas fa-bookmark me-2"></i>프리셋';
+    presetBtn.setAttribute('data-bs-toggle', 'modal');
+    presetBtn.setAttribute('data-bs-target', '#preset-modal');
+    
+    generateBtn.parentNode.insertBefore(presetBtn, generateBtn);
+});
+</script>
+{% endblock %}

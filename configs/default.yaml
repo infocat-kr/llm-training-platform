@@ -1,0 +1,105 @@
+# LLM Training Platform - Default Configuration
+
+# Model Configuration
+model:
+  model_type: 'gpt'  # 'gpt', 'bert', 't5'
+  vocab_size: 30000
+  d_model: 512
+  num_heads: 8
+  num_layers: 6
+  d_ff: 2048
+  max_length: 1024
+  dropout: 0.1
+  activation: 'relu'  # 'relu', 'gelu', 'swish'
+  pad_token_id: 0
+  eos_token_id: 2
+  bos_token_id: 1
+  unk_token_id: 3
+  use_bias: true
+  layer_norm_eps: 1e-6
+  gradient_checkpointing: false
+
+# Data Configuration
+data:
+  train_data_path: './data/train.txt'
+  val_data_path: './data/val.txt'
+  test_data_path: './data/test.txt'
+  dataset_type: 'text'  # 'text', 'language_model', 'conversation', 'qa'
+  tokenizer_type: 'simple'  # 'simple', 'bpe'
+  tokenizer_path: null
+  vocab_size: 30000
+  min_freq: 2
+  preprocessor_type: 'default'  # 'default', 'conversation', 'code'
+  remove_punctuation: true
+  remove_numbers: false
+  remove_stopwords: false
+  lowercase: true
+  min_length: 1
+  max_length: 512
+  train_ratio: 0.8
+  val_ratio: 0.1
+  test_ratio: 0.1
+  random_seed: 42
+
+# Training Configuration
+training:
+  epochs: 10
+  batch_size: 32
+  learning_rate: 1e-4
+  weight_decay: 0.01
+  optimizer_type: 'adamw'  # 'adam', 'adamw', 'sgd', 'rmsprop'
+  betas: [0.9, 0.999]
+  eps: 1e-8
+  scheduler_type: 'cosine'  # 'cosine', 'linear', 'step', 'exponential'
+  warmup_steps: 1000
+  num_training_steps: null
+  max_grad_norm: 1.0
+  accumulation_steps: 1
+  mixed_precision: false
+  loss_type: 'language_model'  # 'language_model', 'classification', 'cross_entropy'
+  label_smoothing: 0.0
+  ignore_index: -100
+  eval_steps: 500
+  save_steps: 1000
+  logging_steps: 100
+  output_dir: './outputs'
+  use_wandb: false
+  wandb_project: 'llm-training'
+  use_tensorboard: true
+  device: 'auto'  # 'auto', 'cpu', 'cuda'
+  num_workers: 0
+  pin_memory: true
+
+# Inference Configuration
+inference:
+  max_length: 100
+  temperature: 1.0
+  top_k: null
+  top_p: null
+  repetition_penalty: 1.0
+  length_penalty: 1.0
+  no_repeat_ngram_size: 0
+  early_stopping: true
+  do_sample: true
+  num_beams: 1
+  num_return_sequences: 1
+  device: 'auto'
+  batch_size: 1
+  max_memory_usage: 0.8
+  use_half_precision: false
+  enable_caching: true
+  cache_size: 1000
+  system_prompt: "You are a helpful AI assistant."
+  max_history: 10
+  enable_memory: true
+  memory_size: 100
+
+# Metadata
+name: 'llm_training'
+version: '1.0.0'
+description: 'LLM Training Configuration'
+author: 'LLM Training Platform'
+project_root: '.'
+data_dir: './data'
+output_dir: './outputs'
+log_dir: './logs'

@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% block title %}모델 훈련 - LLM Training Platform{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">
+            <i class="fas fa-cogs me-2"></i>모델 훈련
+        </h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 훈련 설정 -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-sliders-h me-2"></i>훈련 설정
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="training-form">
+                    <!-- 모델 설정 -->
+                    <div class="mb-3">
+                        <label class="form-label">모델 타입</label>
+                        <select class="form-select" id="model-type" name="model_type">
+                            <option value="gpt">GPT (Decoder-only)</option>
+                            <option value="bert">BERT (Encoder-only)</option>
+                            <option value="t5">T5 (Encoder-Decoder)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">모델 크기 (d_model)</label>
+                                <input type="number" class="form-control" id="d-model" name="d_model" value="512" min="128" max="2048">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">레이어 수</label>
+                                <input type="number" class="form-control" id="num-layers" name="num_layers" value="6" min="2" max="24">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">어텐션 헤드</label>
+                                <input type="number" class="form-control" id="num-heads" name="num_heads" value="8" min="1" max="16">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">FF 차원</label>
+                                <input type="number" class="form-control" id="d-ff" name="d_ff" value="2048" min="512" max="8192">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 훈련 하이퍼파라미터 -->
+                    <hr>
+                    <h6>훈련 하이퍼파라미터</h6>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">배치 크기</label>
+                                <input type="number" class="form-control" id="batch-size" name="batch_size" value="32" min="1" max="128">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">에포크 수</label>
+                                <input type="number" class="form-control" id="epochs" name="epochs" value="10" min="1" max="100">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">학습률</label>
+                                <input type="number" class="form-control" id="learning-rate" name="learning_rate" value="0.0001" step="0.0001" min="0.00001" max="0.01">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">드롭아웃</label>
+                                <input type="number" class="form-control" id="dropout" name="dropout" value="0.1" step="0.01" min="0" max="0.5">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 데이터 설정 -->
+                    <hr>
+                    <h6>데이터 설정</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">훈련 데이터 경로</label>
+                        <input type="text" class="form-control" id="train-data-path" name="train_data_path" placeholder="./data/train.txt">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">검증 데이터 경로</label>
+                        <input type="text" class="form-control" id="val-data-path" name="val_data_path" placeholder="./data/val.txt">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">어휘 크기</label>
+                                <input type="number" class="form-control" id="vocab-size" name="vocab_size" value="30000" min="1000" max="100000">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="mb-3">
+                                <label class="form-label">최대 길이</label>
+                                <input type="number" class="form-control" id="max-length" name="max_length" value="512" min="64" max="2048">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 고급 설정 -->
+                    <div class="accordion" id="advanced-settings">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading-advanced">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-advanced">
+                                    고급 설정
+                                </button>
+                            </h2>
+                            <div id="collapse-advanced" class="accordion-collapse collapse" data-bs-parent="#advanced-settings">
+                                <div class="accordion-body">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">옵티마이저</label>
+                                                <select class="form-select" id="optimizer" name="optimizer">
+                                                    <option value="adamw">AdamW</option>
+                                                    <option value="adam">Adam</option>
+                                                    <option value="sgd">SGD</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">스케줄러</label>
+                                                <select class="form-select" id="scheduler" name="scheduler">
+                                                    <option value="cosine">Cosine</option>
+                                                    <option value="linear">Linear</option>
+                                                    <option value="step">Step</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Warmup 스텝</label>
+                                                <input type="number" class="form-control" id="warmup-steps" name="warmup_steps" value="1000" min="0" max="10000">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">Gradient Clipping</label>
+                                                <input type="number" class="form-control" id="max-grad-norm" name="max_grad_norm" value="1.0" step="0.1" min="0" max="10">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="mixed-precision" name="mixed_precision">
+                                        <label class="form-check-label" for="mixed-precision">
+                                            Mixed Precision 훈련
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="use-wandb" name="use_wandb">
+                                        <label class="form-check-label" for="use-wandb">
+                                            Weights & Biases 로깅
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg" id="start-training-btn">
+                            <i class="fas fa-play me-2"></i>훈련 시작
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 훈련 진행 상황 -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>훈련 진행 상황
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- 훈련 상태 -->
+                <div class="row mb-4">
+                    <div class="col-md-3 text-center">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">현재 에포크</h6>
+                                <h4 class="text-primary" id="current-epoch">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">훈련 손실</h6>
+                                <h4 class="text-danger" id="train-loss">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">검증 손실</h6>
+                                <h4 class="text-warning" id="val-loss">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title">학습률</h6>
+                                <h4 class="text-info" id="learning-rate-current">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 진행률 바 -->
+                <div class="mb-3">
+                    <label class="form-label">전체 진행률</label>
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" id="overall-progress">0%</div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">에포크 진행률</label>
+                    <div class="progress">
+                        <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" id="epoch-progress">0%</div>
+                    </div>
+                </div>
+                
+                <!-- 실시간 로그 -->
+                <div class="mb-3">
+                    <label class="form-label">훈련 로그</label>
+                    <div class="border rounded p-3" style="height: 300px; overflow-y: auto; background-color: #f8f9fa;" id="training-log">
+                        <div class="text-muted">훈련이 시작되면 로그가 여기에 표시됩니다...</div>
+                    </div>
+                </div>
+                
+                <!-- 제어 버튼 -->
+                <div class="d-flex gap-2">
+                    <button class="btn btn-warning" id="pause-training-btn" disabled>
+                        <i class="fas fa-pause me-2"></i>일시정지
+                    </button>
+                    <button class="btn btn-danger" id="stop-training-btn" disabled>
+                        <i class="fas fa-stop me-2"></i>중단
+                    </button>
+                    <button class="btn btn-info" id="save-checkpoint-btn" disabled>
+                        <i class="fas fa-save me-2"></i>체크포인트 저장
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 훈련 완료 모달 -->
+<div class="modal fade" id="training-complete-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle text-success me-2"></i>훈련 완료
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>모델 훈련이 성공적으로 완료되었습니다!</p>
+                <div class="alert alert-info">
+                    <strong>최종 결과:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>최종 훈련 손실: <span id="final-train-loss">-</span></li>
+                        <li>최종 검증 손실: <span id="final-val-loss">-</span></li>
+                        <li>총 훈련 시간: <span id="total-training-time">-</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                <button type="button" class="btn btn-primary" onclick="goToInference()">추론 페이지로 이동</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let trainingActive = false;
+let trainingStartTime = null;
+
+document.getElementById('training-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    startTraining();
+});
+
+function startTraining() {
+    if (trainingActive) {
+        alert('훈련이 이미 진행 중입니다.');
+        return;
+    }
+    
+    const formData = new FormData(document.getElementById('training-form'));
+    const trainingData = Object.fromEntries(formData.entries());
+    
+    // 숫자 필드 변환
+    const numericFields = ['d_model', 'num_layers', 'num_heads', 'd_ff', 'batch_size', 'epochs', 'learning_rate', 'dropout', 'vocab_size', 'max_length', 'warmup_steps', 'max_grad_norm'];
+    numericFields.forEach(field => {
+        if (trainingData[field]) {
+            trainingData[field] = parseFloat(trainingData[field]);
+        }
+    });
+    
+    // 체크박스 필드 변환
+    trainingData.mixed_precision = document.getElementById('mixed-precision').checked;
+    trainingData.use_wandb = document.getElementById('use-wandb').checked;
+    
+    // UI 업데이트
+    document.getElementById('start-training-btn').disabled = true;
+    document.getElementById('pause-training-btn').disabled = false;
+    document.getElementById('stop-training-btn').disabled = false;
+    document.getElementById('save-checkpoint-btn').disabled = false;
+    
+    trainingActive = true;
+    trainingStartTime = new Date();
+    
+    // 로그 초기화
+    document.getElementById('training-log').innerHTML = '';
+    addLog('훈련을 시작합니다...', 'info');
+    
+    // 훈련 시작 요청
+    fetch('/api/train/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(trainingData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            addLog('훈련이 성공적으로 완료되었습니다!', 'success');
+            showTrainingCompleteModal(data);
+        } else {
+            addLog('훈련 중 오류가 발생했습니다: ' + data.message, 'error');
+        }
+    })
+    .catch(error => {
+        addLog('훈련 요청 중 오류가 발생했습니다: ' + error.message, 'error');
+    })
+    .finally(() => {
+        trainingActive = false;
+        document.getElementById('start-training-btn').disabled = false;
+        document.getElementById('pause-training-btn').disabled = true;
+        document.getElementById('stop-training-btn').disabled = true;
+        document.getElementById('save-checkpoint-btn').disabled = true;
+    });
+}
+
+function addLog(message, type = 'info') {
+    const logContainer = document.getElementById('training-log');
+    const timestamp = new Date().toLocaleTimeString();
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 
+                      type === 'warning' ? 'alert-warning' : 'alert-info';
+    
+    const logEntry = document.createElement('div');
+    logEntry.className = `alert ${alertClass} alert-sm mb-2`;
+    logEntry.innerHTML = `<small>[${timestamp}] ${message}</small>`;
+    
+    logContainer.appendChild(logEntry);
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+function showTrainingCompleteModal(data) {
+    document.getElementById('final-train-loss').textContent = data.final_train_loss || '-';
+    document.getElementById('final-val-loss').textContent = data.final_val_loss || '-';
+    
+    if (trainingStartTime) {
+        const totalTime = new Date() - trainingStartTime;
+        const minutes = Math.floor(totalTime / 60000);
+        const seconds = Math.floor((totalTime % 60000) / 1000);
+        document.getElementById('total-training-time').textContent = `${minutes}분 ${seconds}초`;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('training-complete-modal'));
+    modal.show();
+}
+
+function goToInference() {
+    window.location.href = '/inference';
+}
+
+// 시뮬레이션된 훈련 진행 상황 업데이트 (실제로는 WebSocket 등을 사용)
+function simulateTrainingProgress() {
+    if (!trainingActive) return;
+    
+    // 랜덤한 진행 상황 업데이트
+    const currentEpoch = Math.floor(Math.random() * 10) + 1;
+    const trainLoss = (Math.random() * 2 + 0.5).toFixed(4);
+    const valLoss = (Math.random() * 2 + 0.5).toFixed(4);
+    const learningRate = (Math.random() * 0.0001 + 0.0001).toFixed(6);
+    
+    document.getElementById('current-epoch').textContent = currentEpoch;
+    document.getElementById('train-loss').textContent = trainLoss;
+    document.getElementById('val-loss').textContent = valLoss;
+    document.getElementById('learning-rate-current').textContent = learningRate;
+    
+    const overallProgress = (currentEpoch / 10) * 100;
+    const epochProgress = Math.random() * 100;
+    
+    document.getElementById('overall-progress').style.width = overallProgress + '%';
+    document.getElementById('overall-progress').textContent = Math.round(overallProgress) + '%';
+    
+    document.getElementById('epoch-progress').style.width = epochProgress + '%';
+    document.getElementById('epoch-progress').textContent = Math.round(epochProgress) + '%';
+}
+
+// 1초마다 진행 상황 업데이트
+setInterval(simulateTrainingProgress, 1000);
+</script>
+{% endblock %}
