@@ -1,58 +1,58 @@
 # 🧠 LLM Training Platform
 
-대규모 언어 모델(LLM)을 만들고 훈련시킬 수 있는 종합적인 플랫폼입니다.
+It is a comprehensive platform for creating and training large-scale language models (LLMs).
+I asked a large-scale language model to write it on Cursor
 
 ## ✨ 주요 기능
 
-- 🏗️ **다양한 모델 아키텍처**: GPT, BERT, T5 스타일 Transformer 모델 지원
-- 📚 **데이터 처리**: 텍스트 전처리, 토크나이징, 데이터셋 관리
-- 🚀 **고성능 훈련**: Mixed Precision, Gradient Accumulation, Learning Rate Scheduling
-- 🎯 **추론 엔진**: 텍스트 생성, 채팅, 임베딩 추출
-- 🌐 **웹 인터페이스**: Flask 및 Gradio 기반 사용자 친화적 UI
-- 📊 **모니터링**: 실시간 훈련 모니터링, 메트릭 시각화
-- ⚙️ **설정 관리**: YAML 기반 하이퍼파라미터 관리
+- 🏗️ **Various model architectures**: GPT, BERT, T5 style Transformer model support
+- 📚 **Data processing**: Text preprocessing, Tokenizing, Dataset managing
+- 🚀 **High-performance training**: Mixed Precision, Gradient Accumulation, Learning Rate Scheduling
+- 🎯 **Inference engine**: Text creation, chat, embedding extraction
+- 🌐 **Web interface**: User-friendly UI based on Flask and Gradio
+- 📊 **Monitoring**: Real-time training monitoring, metric visualization
+- ⚙️ **Setting management**: YAML-based hyperparameter management
+## 🚀 Quick start
 
-## 🚀 빠른 시작
-
-### 1. 설치
+### 1. Installing
 
 ```bash
-# 저장소 클론
+# Repository clone
 git clone <repository-url>
 cd llm_training_platform
 
-# 가상환경 생성 및 활성화
+# Create and activate a virtual environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 의존성 설치
+# Dependency installation
 pip install -r requirements.txt
 ```
 
-### 2. 예제 실행
+### 2. Example execution
 
 ```bash
-# 예제 스크립트 실행
+# Example script execution
 ./run_example.sh
 
-# 또는 개별 실행
+# Or individual execution
 python train.py --train-data data/sample_data.txt --epochs 5
 python inference.py --model-path outputs/best_model.pt --input-text "Hello world"
 ```
 
-### 3. 웹 인터페이스 실행
+### 3. Web interface execution
 
 ```bash
-# Flask 웹 애플리케이션
+# Flask Web application
 python app.py
 # 접속: http://localhost:5000
 
-# Gradio 웹 애플리케이션
+# Gradio Web application
 python gradio_app.py
 # 접속: http://localhost:7860
 ```
 
-## 📁 프로젝트 구조
+## 📁 Project structure
 
 ```
 llm_training_platform/
